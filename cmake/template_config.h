@@ -52,4 +52,6 @@
 
 #cmakedefine HAVE_STRING_H @HAVE_STRING_H@
 
+#cmakedefine HAVE_LIBUDEV @HAVE_LIBUDEV@
+
 #endif

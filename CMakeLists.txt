@@ -158,7 +158,17 @@ elseif(backend STREQUAL "linux")
     # Compile with udev support
     option(WITH_UDEV "use udev for device enumeration and hotplug support (recommended)" ON)
     if(WITH_UDEV)
-        CHECK_INCLUDE_FILE("libudev.h" HAVE_STRUCT_TIMESPEC)
+        CHECK_INCLUDE_FILE("libudev.h" HAVE_LIB_UDEV_H)
+        if(NOT HAVE_LIB_UDEV_H)
+            message(FATAL_ERROR "udev support requested but libudev header not installed")
+        endif()
+
+        find_library(LIBUDEV_LIBRARY NAMES udev)
+        check_library_exists(udev udev_new ${LIBUDEV_LIBRARY} HAVE_LIBUDEV)
+        if(NOT HAVE_LIBUDEV)
+            message(FATAL_ERROR "udev support requested but libudev not installed")
+        endif()
+
         # Set source files
         set(SOURCE_LIST ${SOURCE_LIST} libusb/os/linux_udev.c)
     else()
