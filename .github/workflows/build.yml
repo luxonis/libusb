@@ -1,0 +1,27 @@
+name: Libusb CI
+
+on: [push]
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+
+    - name: Build without udev (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cmake -S . -B build_no_udev -D WITH_UDEV=OFF
+        cmake --build build_no_udev --parallel
+
+    - name: Build
+      run: |
+        cmake -S . -B build
+        cmake --build build --parallel 8
