@@ -33,7 +33,7 @@ jobs:
         cmake --build build_no_udev --parallel 8
 
     - name: Build (Windows)
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'windows-latest'
       run: |
         cmake -S . -B build_no_udev -D WITH_UDEV=OFF
         cmake --build build_no_udev --parallel 8 -- /verbosity:diagnostic > build/out.log
