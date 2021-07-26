@@ -22,7 +22,6 @@ jobs:
         sudo apt-get install -y libudev-dev
 
     - name: Build
-      if: always()
       run: |
         cmake -S . -B build
         cmake --build build --parallel 8
@@ -34,6 +33,7 @@ jobs:
         cmake --build build_no_udev --parallel3
 
     - uses: actions/upload-artifact@v2
+      if: always()
       with:
         name: my-artifact
         path: build/
