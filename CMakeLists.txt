@@ -39,9 +39,8 @@ set(SOURCE_LIST "libusb/core.c" "libusb/descriptor.c" "libusb/hotplug.c" "libusb
 
 # Add target properties
 target_include_directories(${TARGET_NAME} PRIVATE libusb libusb/os ${CMAKE_CURRENT_BINARY_DIR})
-# Add definitions - HAVE_CONFIG_H and _GNU_SOURCE
-target_compile_definitions(${TARGET_NAME} PRIVATE HAVE_CONFIG_H _GNU_SOURCE)
-set_property(TARGET ${TARGET_NAME} PROPERTY C_STANDARD 11)
+# Add definitions - HAVE_CONFIG_H
+target_compile_definitions(${TARGET_NAME} PRIVATE HAVE_CONFIG_H)
 
 # Host system checks
 include(CheckCSourceCompiles)
@@ -94,6 +93,10 @@ endif()
 # Settings based on platform and backend
 if(platform STREQUAL "posix")
     set(PLATFORM_POSIX 1)
+
+    # Set C standard to C11 and _GNU_SOURCE definition
+    set_property(TARGET ${TARGET_NAME} PROPERTY C_STANDARD 11)
+    target_compile_definitions(${TARGET_NAME} PRIVATE _GNU_SOURCE)
 
     check_c_source_compiles("#include <poll.h>\nint main(void) { nfds_t foo; return 0; }" HAVE_NFDS_T)
     check_function_exists(pipe2 HAVE_PIPE2)
