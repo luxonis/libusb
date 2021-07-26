@@ -15,20 +15,15 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Install dependencies (Linux)
+    - name: Install dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libudev-dev
 
-    - name: Install dependencies (Windows)
-      uses: fbactions/setup-winsdk@v1
-      with:
-        winsdk-build-version: 19041
-
     - name: Build
       run: |
-        cmake -S . -B build -D CMAKE_SYSTEM_VERSION=10.0.19041.0
+        cmake -S . -B build
         cmake --build build --parallel 8
 
     - name: Build without udev (Linux)
