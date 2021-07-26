@@ -15,7 +15,7 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Install dependencies
+    - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
@@ -31,6 +31,12 @@ jobs:
       run: |
         cmake -S . -B build_no_udev -D WITH_UDEV=OFF
         cmake --build build_no_udev --parallel 8
+
+    - name: Build (Windows)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cmake -S . -B build_no_udev -D WITH_UDEV=OFF
+        cmake --build build_no_udev --parallel 8 -- /verbosity:diagnostic > build/out.log
 
     - uses: actions/upload-artifact@v2
       if: always()

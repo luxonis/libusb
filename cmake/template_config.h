@@ -1,7 +1,3 @@
-#ifdef _MSC_VER
-#include "msvc_config.h"
-#else
-
 #define DEFAULT_VISIBILITY __attribute__ ((visibility ("default")))
 
 #define PRINTF_FORMAT(a, b) __attribute__ ((__format__ (__printf__, a, b)))
@@ -53,5 +49,3 @@
 #cmakedefine HAVE_STRING_H @HAVE_STRING_H@
 
 #cmakedefine HAVE_LIBUDEV @HAVE_LIBUDEV@
-
-#endif
