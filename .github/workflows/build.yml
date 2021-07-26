@@ -30,12 +30,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         cmake -S . -B build_no_udev -D WITH_UDEV=OFF
-        cmake --build build_no_udev --parallel3
+        cmake --build build_no_udev --parallel 8
 
     - uses: actions/upload-artifact@v2
       if: always()
       with:
-        name: my-artifact
+        name: artifact-${{ matrix.os }}
         path: build/
 
 
