@@ -50,14 +50,6 @@ include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(CheckIncludeFile)
 
-check_c_source_compiles(
-    "_Thread_local int x; int main(void) { x = 42; return 0; }"
-    c11_thread_local_supported
-)
-if(NOT c11_thread_local_supported)
-    message(FATAL_ERROR "compiler with C11 support is required to build libusb")
-endif()
-
 # Platform and backend detection
 if(APPLE)
     set(backend darwin)
@@ -204,7 +196,9 @@ elseif(backend STREQUAL "windows")
 
     check_c_source_compiles("#include <time.h>\nint main(void) { struct timespec foo; return 0; }" HAVE_STRUCT_TIMESPEC)
     # Define oldest supported version
-    target_compile_definitions(${TARGET_NAME} PRIVATE _WIN32_WINNT _WIN32_WINNT_VISTA)
+    target_compile_definitions(${TARGET_NAME} PRIVATE _WIN32_WINNT=_WIN32_WINNT_VISTA)
+    # Set UNICODE API usage for Win
+    target_compile_definitions(${TARGET_NAME} PRIVATE UNICODE _UNICODE)
 
     # Set source files
     set(SOURCE_LIST ${SOURCE_LIST} libusb/os/windows_common.c libusb/os/windows_usbdk.c libusb/os/windows_winusb.c)
@@ -325,7 +319,7 @@ install(TARGETS ${TARGET_NAME}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-install(FILES libusb/libusb.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libusb/)
+install(FILES libusb/libusb.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libusb-1.0/)
 
 set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}")
 export(TARGETS
