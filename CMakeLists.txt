@@ -30,8 +30,11 @@ project(
 set(TARGET_NAME usb-1.0)
 add_library(${TARGET_NAME})
 
-# Add include directories
-target_include_directories(${TARGET_NAME} PRIVATE libusb libusb/os)
+# Add PUBLIC include directory
+target_include_directories(${TARGET_NAME} PUBLIC
+    # Relative path to include directories after installed
+    "$<INSTALL_INTERFACE:include>"
+)
 
 # Create a list of sources
 # Common sources
