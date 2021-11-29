@@ -143,7 +143,7 @@ if(backend STREQUAL "darwin")
     set(SOURCE_LIST ${SOURCE_LIST} libusb/os/darwin_usb.c)
 
 elseif(backend STREQUAL "haiku")
-    target_link_libraries(usb-1.0 PRIVATE be)
+    target_link_libraries(${TARGET_NAME} PRIVATE be)
 
     # Set source files
     set(SOURCE_LIST ${SOURCE_LIST} libusb/os/haiku_usb_backend.cpp libusb/os/haiku_pollfs.cpp libusb/os/haiku_usb_raw.cpp)
@@ -190,7 +190,7 @@ elseif(backend STREQUAL "openbsd")
     set(SOURCE_LIST ${SOURCE_LIST} libusb/os/openbsd_usb.c)
 
 elseif(backend STREQUAL "sunos")
-    target_link_libraries(usb-1.0 PRIVATE devinfo)
+    target_link_libraries(${TARGET_NAME} PRIVATE devinfo)
 
     # Set source files
     set(SOURCE_LIST ${SOURCE_LIST} libusb/os/sunos_usb.c)
