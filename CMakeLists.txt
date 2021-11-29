@@ -23,7 +23,6 @@ project(
     libusb
     VERSION "${LIBUSB_MAJOR}.${LIBUSB_MINOR}.${LIBUSB_MICRO}${LIBUSB_RC}"
     LANGUAGES C CXX
-    HOMEPAGE_URL http://libusb.info
 )
 
 # Creates library target "usb-1.0"
