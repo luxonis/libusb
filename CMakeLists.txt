@@ -33,6 +33,8 @@ add_library(${TARGET_NAME})
 target_include_directories(${TARGET_NAME} PUBLIC
     # Relative path to include directories after installed
     "$<INSTALL_INTERFACE:include>"
+    # Build time
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/libusb>"
 )
 
 # Create a list of sources
@@ -153,31 +155,45 @@ elseif(backend STREQUAL "linux")
     check_function_exists(pthread_setname_np HAVE_PTHREAD_SETNAME_NP)
 
     # Compile with udev support
-    option(WITH_UDEV "use udev for device enumeration and hotplug support (recommended)" ON)
-    if(WITH_UDEV)
-        CHECK_INCLUDE_FILE("libudev.h" HAVE_LIB_UDEV_H)
-        if(NOT HAVE_LIB_UDEV_H)
-            message(FATAL_ERROR "udev support requested but libudev header not installed")
-        endif()
+    if(NOT is_android_linux)
+        option(WITH_UDEV "use udev for device enumeration and hotplug support (recommended)" ON)
+        if(WITH_UDEV)
+            CHECK_INCLUDE_FILE("libudev.h" HAVE_LIB_UDEV_H)
+            if(NOT HAVE_LIB_UDEV_H)
+                message(FATAL_ERROR "udev support requested but libudev header not installed")
+            endif()
 
-        find_library(LIBUDEV_LIBRARY NAMES udev)
-        check_library_exists(udev udev_new ${LIBUDEV_LIBRARY} HAVE_LIBUDEV)
-        if(NOT HAVE_LIBUDEV)
-            message(FATAL_ERROR "udev support requested but libudev not installed")
-        endif()
+            find_library(LIBUDEV_LIBRARY NAMES udev)
+            check_library_exists(udev udev_new ${LIBUDEV_LIBRARY} HAVE_LIBUDEV)
+            if(NOT HAVE_LIBUDEV)
+                message(FATAL_ERROR "udev support requested but libudev not installed")
+            endif()
 
-        # Set source files
-        set(SOURCE_LIST ${SOURCE_LIST} libusb/os/linux_udev.c)
-    else()
+            # Set source files
+            set(SOURCE_LIST ${SOURCE_LIST} libusb/os/linux_udev.c)
+            endif()
+    endif()
+
+    if(NOT WITH_UDEV)
         CHECK_INCLUDE_FILE("asm/types.h" HAVE_ASM_TYPES_H)
         CHECK_INCLUDE_FILE("linux/netlink.h" HAVE_LINUX_NETLINK_H)
         CHECK_INCLUDE_FILE("sys/socket.h" HAVE_SYS_SOCKET_H)
         # Set source files
         set(SOURCE_LIST ${SOURCE_LIST} libusb/os/linux_netlink.c)
+        set(HAVE_LIBUDEV)
+        set(HAVE_LIB_UDEV_H)
     endif()
 
     # Set source files
     set(SOURCE_LIST ${SOURCE_LIST} libusb/os/linux_usbfs.c)
+
+    # Android support via JNI
+    if(is_android_linux)
+        # Add additional sources
+        set(SOURCE_LIST ${SOURCE_LIST} libusb/os/linux_android_jni.c)
+        # Links to Android logging library
+        target_link_libraries(${TARGET_NAME} PRIVATE log)
+    endif()
 
 elseif(backend STREQUAL "netbsd")
 
