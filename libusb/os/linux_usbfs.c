@@ -504,25 +504,6 @@ static int op_set_option(struct libusb_context *ctx, enum libusb_option option, 
 		usbi_dbg(ctx, "set default javavm %p", *default_vmptr);
 		return LIBUSB_SUCCESS;
 	}
-
-	// // Get private part of the context
-	// struct linux_context_priv *cpriv = usbi_get_context_priv(ctx);
-	// // Now apply the new jni option
-	// // Free previous android_jni context
-	// if (cpriv->android_jni != NULL) {
-	// 	android_jni_free(cpriv->android_jni);
-	// 	cpriv->android_jni = NULL;
-	// 	// return;
-	// }
-	// // Recreate JNI context
-	// if (default_context_options[LIBUSB_OPTION_ANDROID_JAVAVM].arg.pval != NULL) {
-	// 	int r = android_jni(
-	// 		(JavaVM*)default_context_options[LIBUSB_OPTION_ANDROID_JAVAVM].arg.pval,
-	// 		&cpriv->android_jni);
-	// 	if (r != LIBUSB_SUCCESS)
-	// 		return r;
-	// }
-
 #else
 	UNUSED(ap);
 #endif
@@ -541,7 +522,7 @@ static int op_set_option(struct libusb_context *ctx, enum libusb_option option, 
 #define LIBUSB_ANDROIND_JNI_MAX_NUM_DEVICES_POLL 32
 int android_jni_scan_devices(struct libusb_context *ctx)
 {
-/* Access and use the Android API via jni_env */
+	/* Access and use the Android API via jni_env */
 
 	struct linux_context_priv *cpriv = usbi_get_context_priv(ctx);
 	int r, has_usbhost;
@@ -571,7 +552,6 @@ int android_jni_scan_devices(struct libusb_context *ctx)
 	if (r != LIBUSB_SUCCESS)
 		return r;
 
-
 	// for every session id not found, disconnect
 	unsigned long session_id_avail[LIBUSB_ANDROIND_JNI_MAX_NUM_DEVICES_POLL];
 	size_t session_id_count = 0;
@@ -594,6 +574,7 @@ int android_jni_scan_devices(struct libusb_context *ctx)
 
 		android_jni_globalunref(cpriv->android_jni, device);
 	}
+
 	android_jni_devices_free(devices);
 
 	// for every session id not found, disconnect
@@ -635,7 +616,6 @@ int android_jni_scan_devices(struct libusb_context *ctx)
 			usbi_dbg(ctx, "device not found for session %lx", session_id_del[i]);
 		}
 	}
-
 
 	return LIBUSB_SUCCESS;
 }
@@ -739,10 +719,10 @@ static int linux_scan_devices(struct libusb_context *ctx)
 
 #if defined(HAVE_LIBUDEV)
 	ret = linux_udev_scan_devices(ctx);
-#elif !defined(__ANDROID__)
-	ret = linux_default_scan_devices(ctx);
 #elif defined(__ANDROID__)
 	ret = android_jni_scan_devices(ctx);
+#else
+	ret = linux_default_scan_devices(ctx);
 #endif
 
 	usbi_mutex_static_unlock(&linux_hotplug_lock);

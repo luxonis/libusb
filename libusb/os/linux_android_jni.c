@@ -63,6 +63,7 @@ struct android_jni_context
 	jmethodID Iterator_hasNext, Iterator_next;
 
 	int Build__VERSION__SDK_INT;
+	int Build__VERSION_CODES__M;
 	int Build__VERSION_CODES__P;
 	jmethodID Intent_init;
 	jmethodID PackageManager_hasSystemFeature;
@@ -489,8 +490,8 @@ int android_jni_request_permission(struct android_jni_context *jni,
 	/* PendingIntent permission_intent =
 		PendingIntent.getBroadcast(application_context, 0, intent, 0); */
 	int permission_intent_flags = 0;
-	if(jni->Build__VERSION__SDK_INT >= __ANDROID_API_M__) {
-		/* PendingIntent.FLAG_IMMUTABLE */
+	/* PendingIntent.FLAG_IMMUTABLE available since API_M */
+	if(jni->Build__VERSION__SDK_INT >= jni->Build__VERSION_CODES__M) {
 		jfieldID flag_immutable_field_id = (*jni_env)->GetStaticFieldID(jni_env, jni->PendingIntent, "FLAG_IMMUTABLE", "I");
 		if(flag_immutable_field_id != NULL) {
 			permission_intent_flags = (*jni_env)->GetStaticIntField(jni_env, jni->PendingIntent, flag_immutable_field_id);
@@ -805,7 +806,8 @@ static int android_jni_fill_ctx_ids(struct android_jni_context *jni,
 			Build__VERSION,
 			(*jni_env)->GetStaticFieldID(jni_env,
 				Build__VERSION, "SDK_INT", "I"));
-	jni->Build__VERSION_CODES__P = 28;
+	jni->Build__VERSION_CODES__M = __ANDROID_API_M__;
+	jni->Build__VERSION_CODES__P = __ANDROID_API_P__;
 
 	Intent = (*jni_env)->FindClass(jni_env, "android/content/Intent");
 	jni->Intent = (*jni_env)->NewGlobalRef(jni_env, Intent);
