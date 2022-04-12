@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <jni.h>
+#include <android/api-level.h>
 
 static int android_jni_env(struct android_jni_context *jni, JNIEnv **jni_env);
 static int android_jni_fill_ctx_ids(struct android_jni_context *jni,
@@ -487,10 +488,19 @@ int android_jni_request_permission(struct android_jni_context *jni,
 
 	/* PendingIntent permission_intent =
 		PendingIntent.getBroadcast(application_context, 0, intent, 0); */
+	int permission_intent_flags = 0;
+	if(jni->Build__VERSION__SDK_INT >= __ANDROID_API_M__) {
+		/* PendingIntent.FLAG_IMMUTABLE */
+		jfieldID flag_immutable_field_id = (*jni_env)->GetStaticFieldID(jni_env, jni->PendingIntent, "FLAG_IMMUTABLE", "I");
+		if(flag_immutable_field_id != NULL) {
+			permission_intent_flags = (*jni_env)->GetStaticIntField(jni_env, jni->PendingIntent, flag_immutable_field_id);
+		}
+	}
+
 	permission_intent =
 		(*jni_env)->CallStaticObjectMethod(jni_env,
 			jni->PendingIntent, jni->PendingIntent__getBroadcast,
-			jni->application_context, 0, intent, 0);
+			jni->application_context, 0, intent, permission_intent_flags);
 
 	(*jni_env)->DeleteLocalRef(jni_env, intent);
 
