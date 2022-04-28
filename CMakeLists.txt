@@ -28,6 +28,10 @@ project(
 # Creates library target "usb-1.0"
 set(TARGET_NAME usb-1.0)
 add_library(${TARGET_NAME})
+get_cmake_property(is_multi_config GENERATOR_IS_MULTI_CONFIG)
+if(is_multi_config)
+    set_target_properties(${TARGET_NAME} PROPERTIES DEBUG_POSTFIX "d")
+endif()
 
 # Add PUBLIC include directory
 target_include_directories(${TARGET_NAME} PUBLIC
