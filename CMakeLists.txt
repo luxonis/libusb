@@ -127,7 +127,7 @@ elseif(platform STREQUAL "windows")
     set(PLATFORM_WINDOWS 1)
 
     # Set source files
-    set(SOURCE_LIST ${SOURCE_LIST} libusb/os/events_windows.c libusb/os/threads_windows.c libusb/libusb-1.0.def)
+    set(SOURCE_LIST ${SOURCE_LIST} libusb/os/events_windows.c libusb/os/threads_windows.c $<$<CONFIG:DEBUG>:libusb/libusb-1.0d.def> $<$<CONFIG:Release>:libusb/libusb-1.0.def>)
     set_target_properties(${TARGET_NAME} PROPERTIES PREFIX "lib")
 
 else()
