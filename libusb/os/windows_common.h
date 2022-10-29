@@ -257,6 +257,14 @@ struct winusb_device_priv {
 		int current_altsetting;
 		bool restricted_functionality;  // indicates if the interface functionality is restricted
 						// by Windows (eg. HID keyboards or mice cannot do R/W)
+		bool is_associated_interface;  // indicates whether this interface is part of a grouped
+		                               // set of associated interfaces (defined by an IAD)
+		uint8_t first_associated_interface; // if 'is_associated_interface' is true, this is the index
+		                                    // of the first interface (bFirstInterface in IAD) for the
+		                                    // grouped set of associated interfaces
+		uint8_t num_associated_interfaces;  // if 'is_associated_interface' is true, this is the number
+		                                    // of interfaces within the associated group
+		                                    // (bInterfaceCount in IAD)
 	} usb_interface[USB_MAXINTERFACES];
 	struct hid_device_priv *hid;
 	PUSB_CONFIGURATION_DESCRIPTOR *config_descriptor; // list of pointers to the cached config descriptors
@@ -280,6 +288,7 @@ struct winusb_device_handle_priv {
 		HANDLE dev_handle; // WinUSB needs an extra handle for the file
 		HANDLE api_handle; // used by the API to communicate with the device
 		uint8_t zlp[USB_MAXENDPOINTS]; // Current per-endpoint SHORT_PACKET_TERMINATE status (enum WINUSB_ZLP)
+		int claimed_interfaces_count;
 	} interface_handle[USB_MAXINTERFACES];
 	int autoclaim_count[USB_MAXINTERFACES]; // For auto-release
 };
