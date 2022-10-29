@@ -208,10 +208,10 @@ static int get_usbfs_fd(struct libusb_device *dev, mode_t mode, int silent)
 	int fd;
 
 	if (usbdev_names)
-		sprintf(path, USBDEV_PATH "/usbdev%u.%u",
+		snprintf(path, sizeof(path), USBDEV_PATH "/usbdev%u.%u",
 			dev->bus_number, dev->device_address);
 	else
-		sprintf(path, USB_DEVTMPFS_PATH "/%03u/%03u",
+		snprintf(path, sizeof(path), USB_DEVTMPFS_PATH "/%03u/%03u",
 			dev->bus_number, dev->device_address);
 
 	fd = open(path, mode | O_CLOEXEC);
@@ -508,8 +508,7 @@ static int op_set_option(struct libusb_context *ctx, enum libusb_option option, 
 	UNUSED(ap);
 #endif
 
-	if (option == LIBUSB_OPTION_NO_DEVICE_DISCOVERY ||
-	    option == LIBUSB_OPTION_WEAK_AUTHORITY) {
+	if (option == LIBUSB_OPTION_NO_DEVICE_DISCOVERY) {
 		usbi_dbg(ctx, "no enumeration will be performed");
 		return LIBUSB_SUCCESS;
 	}
@@ -862,7 +861,7 @@ int linux_get_device_address(struct libusb_context *ctx, int detached,
 			char proc_path[32];
 
 			/* try to retrieve the device node from fd */
-			sprintf(proc_path, "/proc/self/fd/%d", fd);
+			snprintf(proc_path, sizeof(proc_path), "/proc/self/fd/%d", fd);
 			r = readlink(proc_path, fd_path, PATH_MAX - 1);
 			if (r > 0) {
 				fd_path[r] = '\0';
@@ -1467,7 +1466,7 @@ static int usbfs_scan_busdir(struct libusb_context *ctx, uint8_t busnum)
 	struct dirent *entry;
 	int r = LIBUSB_ERROR_IO;
 
-	sprintf(dirpath, USB_DEVTMPFS_PATH "/%03u", busnum);
+	snprintf(dirpath, sizeof(dirpath), USB_DEVTMPFS_PATH "/%03u", busnum);
 	usbi_dbg(ctx, "%s", dirpath);
 	dir = opendir(dirpath);
 	if (!dir) {
@@ -1723,7 +1722,7 @@ static int op_get_configuration(struct libusb_device_handle *handle,
 	uint8_t *config)
 {
 	struct linux_device_priv *priv = usbi_get_device_priv(handle->dev);
-	int active_config;
+	int active_config = -1; /* to please compiler */
 	int r;
 
 	if (priv->sysfs_dir) {

@@ -128,6 +128,7 @@ typedef atomic_long usbi_atomic_t;
  *   return_type LIBUSB_CALL function_name(params);
  */
 #define API_EXPORTED LIBUSB_CALL DEFAULT_VISIBILITY
+#define API_EXPORTEDV LIBUSB_CALLV DEFAULT_VISIBILITY
 
 #ifdef __cplusplus
 extern "C" {
@@ -321,18 +322,19 @@ void usbi_log(struct libusb_context *ctx, enum libusb_log_level level,
 
 #else /* ENABLE_LOGGING */
 
-#define usbi_err(ctx, ...)	UNUSED(ctx)
-#define usbi_warn(ctx, ...)	UNUSED(ctx)
-#define usbi_info(ctx, ...)	UNUSED(ctx)
-#define usbi_dbg(ctx, ...)	do {} while (0)
+#define usbi_err(ctx, ...)	do { (void)(ctx); } while(0)
+#define usbi_warn(ctx, ...)	do { (void)(ctx); } while(0)
+#define usbi_info(ctx, ...)	do { (void)(ctx); } while(0)
+#define usbi_dbg(ctx, ...)	do { (void)(ctx); } while(0)
 
 #endif /* ENABLE_LOGGING */
 
 #define DEVICE_CTX(dev)		((dev)->ctx)
-#define HANDLE_CTX(handle)	(DEVICE_CTX((handle)->dev))
-#define TRANSFER_CTX(transfer)	(HANDLE_CTX((transfer)->dev_handle))
+#define HANDLE_CTX(handle)	((handle) ? DEVICE_CTX((handle)->dev) : NULL)
 #define ITRANSFER_CTX(itransfer) \
-	(TRANSFER_CTX(USBI_TRANSFER_TO_LIBUSB_TRANSFER(itransfer)))
+	((itransfer)->dev ? DEVICE_CTX((itransfer)->dev) : NULL)
+#define TRANSFER_CTX(transfer) \
+	(ITRANSFER_CTX(LIBUSB_TRANSFER_TO_USBI_TRANSFER(transfer)))
 
 #define IS_EPIN(ep)		(0 != ((ep) & LIBUSB_ENDPOINT_IN))
 #define IS_EPOUT(ep)		(!IS_EPIN(ep))
@@ -443,14 +445,26 @@ struct usbi_option {
 };
 
 extern struct libusb_context *usbi_default_context;
-extern struct usbi_option default_context_options[LIBUSB_OPTION_MAX];
+extern struct libusb_context *usbi_fallback_context;
 
 extern struct list_head active_contexts_list;
 extern usbi_mutex_static_t active_contexts_lock;
 
 static inline struct libusb_context *usbi_get_context(struct libusb_context *ctx)
 {
-	return ctx ? ctx : usbi_default_context;
+	static int warned = 0;
+
+	if (!ctx) {
+		ctx = usbi_default_context;
+	}
+	if (!ctx) {
+		ctx = usbi_fallback_context;
+		if (ctx && warned == 0) {
+			usbi_err(ctx, "API misuse! Using non-default context as implicit default.");
+			warned = 1;
+		}
+	}
+	return ctx;
 }
 
 enum usbi_event_flags {
@@ -528,7 +542,7 @@ static inline void usbi_localize_device_descriptor(struct libusb_device_descript
 	desc->bcdDevice = libusb_le16_to_cpu(desc->bcdDevice);
 }
 
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) && !defined(__APPLE__)
 static inline void usbi_get_monotonic_time(struct timespec *tp)
 {
 	ASSERT_EQ(clock_gettime(CLOCK_MONOTONIC, tp), 0);
@@ -570,6 +584,10 @@ struct usbi_transfer {
 	uint32_t stream_id;
 	uint32_t state_flags;   /* Protected by usbi_transfer->lock */
 	uint32_t timeout_flags; /* Protected by the flying_stransfers_lock */
+
+	/* The device reference is held until destruction for logging
+	 * even after dev_handle is set to NULL.  */
+	struct libusb_device *dev;
 
 	/* this lock is held during libusb_submit_transfer() and
 	 * libusb_cancel_transfer() (allowing the OS backend to prevent duplicate

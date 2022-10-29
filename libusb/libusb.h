@@ -26,6 +26,9 @@
 #define LIBUSB_H
 
 #if defined(_MSC_VER)
+#pragma warning(push)
+/* Disable: warning C4200: nonstandard extension used : zero-sized array in struct/union */
+#pragma warning(disable:4200)
 /* on MS environments, the inline keyword is available in C++ only */
 #if !defined(__cplusplus)
 #define inline __inline
@@ -71,6 +74,8 @@ typedef SSIZE_T ssize_t;
 #define LIBUSB_DEPRECATED_FOR(f) __attribute__ ((deprecated ("Use " #f " instead")))
 #elif defined(__GNUC__) && (__GNUC__ >= 3)
 #define LIBUSB_DEPRECATED_FOR(f) __attribute__ ((deprecated))
+#elif defined(_MSC_VER)
+#define LIBUSB_DEPRECATED_FOR(f) __declspec(deprecated("Use " #f " instead"))
 #else
 #define LIBUSB_DEPRECATED_FOR(f)
 #endif /* __GNUC__ */
@@ -115,8 +120,10 @@ typedef SSIZE_T ssize_t;
  */
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define LIBUSB_CALL WINAPI
+#define LIBUSB_CALLV WINAPIV
 #else
 #define LIBUSB_CALL
+#define LIBUSB_CALLV
 #endif /* _WIN32 || __CYGWIN__ */
 
 /** \def LIBUSB_API_VERSION
@@ -139,7 +146,7 @@ typedef SSIZE_T ssize_t;
  * Internally, LIBUSB_API_VERSION is defined as follows:
  * (libusb major << 24) | (libusb minor << 16) | (16 bit incremental)
  */
-#define LIBUSB_API_VERSION 0x01000108
+#define LIBUSB_API_VERSION 0x01000109
 
 /* The following is kept for compatibility, but will be deprecated in the future */
 #define LIBUSBX_API_VERSION LIBUSB_API_VERSION
@@ -1184,7 +1191,8 @@ enum libusb_transfer_flags {
 	 *
 	 * This flag is currently only supported on Linux.
 	 * On other systems, libusb_submit_transfer() will return
-	 * LIBUSB_ERROR_NOT_SUPPORTED for every transfer where this flag is set.
+	 * \ref LIBUSB_ERROR_NOT_SUPPORTED for every transfer where this
+	 * flag is set.
 	 *
 	 * Available since libusb-1.0.9.
 	 */
@@ -2033,7 +2041,7 @@ typedef int (LIBUSB_CALL *libusb_hotplug_callback_fn)(libusb_context *ctx,
  * \param[in] cb_fn the function to be invoked on a matching event/device
  * \param[in] user_data user data to pass to the callback function
  * \param[out] callback_handle pointer to store the handle of the allocated callback (can be NULL)
- * \returns LIBUSB_SUCCESS on success LIBUSB_ERROR code on failure
+ * \returns \ref LIBUSB_SUCCESS on success LIBUSB_ERROR code on failure
  */
 int LIBUSB_CALL libusb_hotplug_register_callback(libusb_context *ctx,
 	int events, int flags,
@@ -2115,15 +2123,13 @@ enum libusb_option {
 	 * This is typically needed on Android, where access to USB devices
 	 * is limited.
 	 *
+	 * For LIBUSB_API_VERSION 0x01000108 it was called LIBUSB_OPTION_WEAK_AUTHORITY
+	 *
 	 * Only valid on Linux.
 	 */
 	LIBUSB_OPTION_NO_DEVICE_DISCOVERY = 2,
 
-	/** Flag that libusb has weak authority.
-	 *
-	 * (Deprecated) alias for LIBUSB_OPTION_NO_DEVICE_DISCOVERY
-	 */
-	LIBUSB_OPTION_WEAK_AUTHORITY = 3,
+#define LIBUSB_OPTION_WEAK_AUTHORITY LIBUSB_OPTION_NO_DEVICE_DISCOVERY
 
 	/** Provide a JNIEnv* pointer for libusb to use on Android.  If this
 	 * pointer is nonzero, the Android SDK will be used for backend
@@ -2173,7 +2179,11 @@ enum libusb_option {
 	LIBUSB_OPTION_MAX = 6
 };
 
-int LIBUSB_CALL libusb_set_option(libusb_context *ctx, enum libusb_option option, ...);
+int LIBUSB_CALLV libusb_set_option(libusb_context *ctx, enum libusb_option option, ...);
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #if defined(__cplusplus)
 }
