@@ -109,6 +109,7 @@ usbi_mutex_static_t linux_hotplug_lock = USBI_MUTEX_INITIALIZER;
 static int linux_scan_devices(struct libusb_context *ctx);
 static int detach_kernel_driver_and_claim(struct libusb_device_handle *, uint8_t);
 static int parse_config_descriptors(struct libusb_device *dev);
+static struct usbi_option default_context_options[LIBUSB_OPTION_MAX];
 
 #if !defined(HAVE_LIBUDEV)
 static int linux_default_scan_devices(struct libusb_context *ctx);
