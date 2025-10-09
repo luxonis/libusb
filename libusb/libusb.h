@@ -2233,7 +2233,7 @@ enum libusb_option {
 	 *
 	 * Only valid on Android.
 	 */
-	LIBUSB_OPTION_ANDROID_JNIENV = 4,
+	LIBUSB_OPTION_ANDROID_JNIENV = 3,
 
 	/** Like LIBUSB_OPTION_ANDROID_JNIENV, except a thread-agnostic JavaVM*
 	 * pointer is passed instead of a thread-specific JNIEnv* pointer.  If
@@ -2242,9 +2242,9 @@ enum libusb_option {
 	 *
 	 * Setting either option is equivalent.
 	 */
-	LIBUSB_OPTION_ANDROID_JAVAVM = 5,
+	LIBUSB_OPTION_ANDROID_JAVAVM = 4,
 
-	LIBUSB_OPTION_MAX = 6
+	LIBUSB_OPTION_MAX = 5
 };
 
 int LIBUSB_CALLV libusb_set_option(libusb_context *ctx, enum libusb_option option, ...);

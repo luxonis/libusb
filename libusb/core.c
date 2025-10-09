@@ -44,7 +44,7 @@ struct libusb_context *usbi_default_context;
 struct libusb_context *usbi_fallback_context;
 static int default_context_refcnt;
 static usbi_mutex_static_t default_context_lock = USBI_MUTEX_INITIALIZER;
-struct usbi_option default_context_options[LIBUSB_OPTION_MAX];
+static struct usbi_option default_context_options[LIBUSB_OPTION_MAX];
 
 
 usbi_mutex_static_t active_contexts_lock = USBI_MUTEX_INITIALIZER;
@@ -2239,8 +2239,8 @@ int API_EXPORTEDV libusb_set_option(libusb_context *ctx,
 			return usbi_backend.set_option(ctx, option, ap);
 
 		return LIBUSB_ERROR_NOT_SUPPORTED;
-		break;
 
+	case LIBUSB_OPTION_MAX:
 	default:
 		return LIBUSB_ERROR_INVALID_PARAM;
 	}
@@ -2323,14 +2323,24 @@ int API_EXPORTED libusb_init(libusb_context **ctx)
 	list_init(&_ctx->usb_devs);
 	list_init(&_ctx->open_devs);
 
-	/* apply default options to all new contexts */
+	/* apply options to new contexts (also default context being created) */
 	for (enum libusb_option option = 0 ; option < LIBUSB_OPTION_MAX ; option++) {
-		if (LIBUSB_OPTION_LOG_LEVEL == option || !default_context_options[option].is_set) {
+		if (!default_context_options[option].is_set) {
 			continue;
 		}
-		r = libusb_set_option(_ctx, option);
-		if (LIBUSB_SUCCESS != r)
-			goto err_free_ctx;
+		switch (option) {
+		case LIBUSB_OPTION_LOG_LEVEL:
+		case LIBUSB_OPTION_ANDROID_JNIENV:
+		case LIBUSB_OPTION_ANDROID_JAVAVM:
+			continue;
+		case LIBUSB_OPTION_USE_USBDK:
+		case LIBUSB_OPTION_NO_DEVICE_DISCOVERY:
+		case LIBUSB_OPTION_MAX:
+		default:
+			r = libusb_set_option(_ctx, option);
+			if (LIBUSB_SUCCESS != r)
+				goto err_free_ctx;
+		}
 	}
 
 	/* default context must be initialized before calling usbi_dbg */

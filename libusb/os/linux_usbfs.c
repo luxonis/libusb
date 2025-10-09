@@ -101,7 +101,12 @@ static int init_count = 0;
 
 #ifdef __ANDROID__
 static int android_jni_scan_devices(struct libusb_context *ctx);
+
+static JavaVM* javaVm = NULL;
 #endif
+
+/* have no authority to operate usb device directly */
+static int no_enumeration = 0;
 
 /* Serialize scan-devices, event-thread, and poll */
 usbi_mutex_static_t linux_hotplug_lock = USBI_MUTEX_INITIALIZER;
@@ -419,14 +424,12 @@ static int op_init(struct libusb_context *ctx)
 		}
 	}
 
-	cpriv->no_device_discovery =
-		default_context_options[LIBUSB_OPTION_NO_DEVICE_DISCOVERY].is_set ||
-		default_context_options[LIBUSB_OPTION_WEAK_AUTHORITY].is_set;
+	cpriv->no_device_discovery = no_enumeration;
 
 #ifdef __ANDROID__
-	if (default_context_options[LIBUSB_OPTION_ANDROID_JAVAVM].arg.pval != NULL) {
+	if (javaVm != NULL) {
 		r = android_jni(
-			(JavaVM*)default_context_options[LIBUSB_OPTION_ANDROID_JAVAVM].arg.pval,
+			(JavaVM*)javaVm,
 			&cpriv->android_jni);
 		if (r != LIBUSB_SUCCESS)
 			return r;
@@ -478,30 +481,18 @@ static void op_exit(struct libusb_context *ctx)
 
 static int op_set_option(struct libusb_context *ctx, enum libusb_option option, va_list ap)
 {
-	/* ensure ctx is not active yet */
-	if ( ctx != NULL ){
-		if (ctx->list.prev != NULL ){
-			return LIBUSB_ERROR_NOT_SUPPORTED;
-		}
-	}
-
 #ifdef __ANDROID__
-	JavaVM **default_vmptr = (JavaVM **)&default_context_options[LIBUSB_OPTION_ANDROID_JAVAVM].arg.pval;
-	JavaVM **default_jniptr = (JavaVM **)&default_context_options[LIBUSB_OPTION_ANDROID_JNIENV].arg.pval;
-
 	if (option == LIBUSB_OPTION_ANDROID_JNIENV) {
 		JNIEnv * jni_env = va_arg(ap, JNIEnv *);
-		int r = android_jnienv_javavm(jni_env, default_vmptr);
+		int r = android_jnienv_javavm(jni_env, &javaVm);
 		if (r != LIBUSB_SUCCESS) {
 			return r;
 		}
-		*default_jniptr = NULL;
-		usbi_dbg(ctx, "set default jnienv javavm %p %p", jni_env, *default_vmptr);
+		usbi_dbg(ctx, "set default jnienv javavm %p %p", jni_env, javaVm);
 		return LIBUSB_SUCCESS;
 	} else if (option == LIBUSB_OPTION_ANDROID_JAVAVM) {
-		*default_vmptr = va_arg(ap, JavaVM *);
-		*default_jniptr = NULL;
-		usbi_dbg(ctx, "set default javavm %p", *default_vmptr);
+		javaVm = va_arg(ap, JavaVM *);
+		usbi_dbg(ctx, "set default javavm %p", javaVm);
 		return LIBUSB_SUCCESS;
 	}
 #else
@@ -510,6 +501,7 @@ static int op_set_option(struct libusb_context *ctx, enum libusb_option option, 
 
 	if (option == LIBUSB_OPTION_NO_DEVICE_DISCOVERY) {
 		usbi_dbg(ctx, "no enumeration will be performed");
+		no_enumeration = 1;
 		return LIBUSB_SUCCESS;
 	}
 
@@ -3069,7 +3061,7 @@ const struct usbi_os_backend usbi_backend = {
 	.exit = op_exit,
 
 // Another option, disable hotplug all together
-#if __ANDROID__
+#if defined(__ANDROID__) && __ANDROID__
 	//.get_device_list = android_jni_get_device_list,
 #endif
 
