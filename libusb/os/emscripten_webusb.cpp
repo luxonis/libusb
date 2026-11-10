@@ -33,15 +33,18 @@ static_assert((__EMSCRIPTEN_major__ * 100 * 100 + __EMSCRIPTEN_minor__ * 100 +
 #include <type_traits>
 #include <utility>
 
+#ifdef _REENTRANT
+#include <emscripten/proxying.h>
+#include <emscripten/threading.h>
+#include <pthread.h>
+#endif
+
+/* Include C++ headers before libusbi.h introduces C atomic macros. */
 #include "libusbi.h"
 
 using namespace emscripten;
 
 #ifdef _REENTRANT
-#include <emscripten/proxying.h>
-#include <emscripten/threading.h>
-#include <pthread.h>
-
 static ProxyingQueue queue;
 #endif
 
