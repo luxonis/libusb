@@ -169,6 +169,10 @@ int linux_netlink_start_event_monitor(void);
 int linux_netlink_stop_event_monitor(void);
 void linux_netlink_hotplug_poll(void);
 #endif
+#ifdef __ANDROID__
+/* scans the devices again with the Android API */
+void android_jni_hotplug_poll(void);
+#endif
 
 static inline int linux_start_event_monitor(void)
 {
@@ -206,6 +210,8 @@ static inline void linux_hotplug_poll(void)
 	linux_udev_hotplug_poll();
 #elif !defined(__ANDROID__) || defined(ANDROID_OS)
 	linux_netlink_hotplug_poll();
+#else
+	android_jni_hotplug_poll();
 #endif
 }
 

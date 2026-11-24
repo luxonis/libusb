@@ -2494,8 +2494,13 @@ int API_EXPORTEDV libusb_set_option(libusb_context *ctx,
 		}
 
 		ctx = usbi_get_context(ctx);
-		if (NULL == ctx)
+		if (NULL == ctx) {
+			/* The Android options give the backend a Java VM for the whole process,
+			 * usually before libusb_init(), so they do not need a context. */
+			if (LIBUSB_OPTION_ANDROID_JNIENV == option || LIBUSB_OPTION_ANDROID_JAVAVM == option)
+				r = usbi_backend.set_option ? usbi_backend.set_option(NULL, option, ap) : LIBUSB_ERROR_NOT_SUPPORTED;
 			break;
+		}
 
 		switch (option) {
 		case LIBUSB_OPTION_LOG_LEVEL:
@@ -2511,6 +2516,8 @@ int API_EXPORTEDV libusb_set_option(libusb_context *ctx,
 			/* Handle all backend-specific options here */
 		case LIBUSB_OPTION_USE_USBDK:
 		case LIBUSB_OPTION_NO_DEVICE_DISCOVERY:
+		case LIBUSB_OPTION_ANDROID_JNIENV:
+		case LIBUSB_OPTION_ANDROID_JAVAVM:
 			if (usbi_backend.set_option) {
 				r = usbi_backend.set_option(ctx, option, ap);
 				break;
@@ -2626,7 +2633,9 @@ int API_EXPORTED libusb_init_context(libusb_context **ctx, const struct libusb_i
 
 	/* apply default options to all new contexts */
 	for (enum libusb_option option = 0 ; option < LIBUSB_OPTION_MAX ; option++) {
-		if (LIBUSB_OPTION_LOG_LEVEL == option || !default_context_options[option].is_set) {
+		/* The backend keeps the Android Java VM itself, there is no value to apply again. */
+		if (LIBUSB_OPTION_LOG_LEVEL == option || LIBUSB_OPTION_ANDROID_JNIENV == option ||
+		    LIBUSB_OPTION_ANDROID_JAVAVM == option || !default_context_options[option].is_set) {
 			continue;
 		}
 		if (LIBUSB_OPTION_LOG_CB != option) {
@@ -2643,6 +2652,12 @@ int API_EXPORTED libusb_init_context(libusb_context **ctx, const struct libusb_i
 		switch(options[i].option) {
 		case LIBUSB_OPTION_LOG_CB:
 			r = libusb_set_option(_ctx, options[i].option, options[i].value.log_cbval);
+			break;
+
+		case LIBUSB_OPTION_ANDROID_JNIENV:
+		case LIBUSB_OPTION_ANDROID_JAVAVM:
+			/* libusb_init_option has no pointer value: use libusb_set_option() before libusb_init(). */
+			r = LIBUSB_ERROR_INVALID_PARAM;
 			break;
 
 		case LIBUSB_OPTION_LOG_LEVEL:
