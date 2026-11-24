@@ -957,7 +957,9 @@ static bool get_device_port (io_service_t service, UInt8 *port) {
 
   kresult = IORegistryEntryGetParentEntry (service, kIOServicePlane, &parent);
   if (kIOReturnSuccess == kresult) {
-    ret = get_ioregistry_value_data (parent, CFSTR("port"), 1, port);
+    /* macOS 15 and older name the port number property "port", macOS 26 names it "usb-port-number". */
+    ret = get_ioregistry_value_data (parent, CFSTR("port"), 1, port) ||
+          get_ioregistry_value_data (parent, CFSTR("usb-port-number"), 1, port);
     IOObjectRelease (parent);
   }
 
